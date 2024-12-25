@@ -31,9 +31,8 @@ public class EmployeeController {
     @GetMapping("/{id}")
     public ResponseEntity<Employee> getEmployeeById(@PathVariable int id) {
     // Using custom exception class to throw proper message || Best practice fo rexception handling
-        if (id<=0) {
-            throw new ResourceNotFoundException("Employee ID : " + id);
-        }
+
+        Employee employee = employeeService.getEmployeeById(id);
         return new ResponseEntity<Employee>(employeeService.getEmployeeById(id),HttpStatus.OK);
     }
 

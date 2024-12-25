@@ -23,7 +23,7 @@ public class EmployeeService {
     // Using custom exception class to throw proper message || Best practice fo rexception handling
     public Employee getEmployeeById(int id){
         return employeeRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee with ID " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: ",id));
     }
     public Employee addEmployee(Employee e){
         return employeeRepo.save(e);
@@ -39,7 +39,7 @@ public class EmployeeService {
             if (employeeRepo.existsById(id)) {
                 employeeRepo.deleteById(id);
             } else {
-                throw new ResourceNotFoundException("Employee with ID " + id + " not found");
+                throw new ResourceNotFoundException("Employee not found with ID: ", id);
             }
         } catch (ResourceNotFoundException ex) {
             System.err.println("Error: " + ex.getMessage());

@@ -1,15 +1,14 @@
-package com.jvm.Week4;
+package com.jvm.Week5;
 
-import com.jvm.Week3.Week3Application;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Week4Application {
+public class Week5Application {
     public static void main(String[] args) {
 
-        SpringApplication.run(Week4Application.class, args);
-        System.out.println("Hellooo sir it is week4 Application!");
+        SpringApplication.run(Week5Application.class, args);
+        System.out.println("Hellooo sir it is week5 Application!");
     }
 
 }

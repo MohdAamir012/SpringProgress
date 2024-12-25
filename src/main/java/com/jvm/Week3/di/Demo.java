@@ -1,2 +1,5 @@
-package com.jvm.Week3.di;public class Demo {
+package com.jvm.Week3.di;
+
+public class Demo {
+
 }

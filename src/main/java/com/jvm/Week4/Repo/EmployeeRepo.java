@@ -40,7 +40,7 @@ public class EmployeeRepo {
             employee.setSalary(e.getSalary());
             return employee;
         } else {
-            throw new ResourceNotFoundException("No employee find with the id "+id);          // Return empty if the employee was not found
+            throw new ResourceNotFoundException("Employee not found with ID: ", id);
         }
     }
 

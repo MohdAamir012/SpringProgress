@@ -5,6 +5,9 @@ import com.jvm.Week6.Entity.Project;
 import com.jvm.Week6.Exception.ResourceNotFoundException;
 import com.jvm.Week6.Repository.EmployeeRepo;
 import com.jvm.Week6.Repository.ProjectRepo;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
@@ -26,117 +29,107 @@ public class EmployeeService {
     @Autowired
     private SessionFactory sessionFactory;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public EmployeeService(EmployeeRepo employeeRepo) {
         this.employeeRepo = employeeRepo;
     }
-
     public List<Employee> getAllEmployees() {
-        return employeeRepo.findAll();
+        String hql = "FROM Employee";
+        Query query = entityManager.createQuery(hql, Employee.class);
+        return query.getResultList();
     }
 
     @Transactional
     public Employee getEmployeeById(Integer id) {
-        try (Session session = sessionFactory.openSession()) {
-            Employee employee = session.get(Employee.class, id);
-            if (employee == null) {
-                throw new ResourceNotFoundException("Employee not found with ID: " + id);
-            }
-            Hibernate.initialize(employee.getEmployeeProfile());
-            Hibernate.initialize(employee.getEmployeeProfile());
-            Hibernate.initialize(employee.getEmployeeProfile().getAddress());
-            Hibernate.initialize(employee.getAssignedProjects());
-            return employee;
+        String hql = "FROM Employee e WHERE e.id = :id";
+        Query query = entityManager.createQuery(hql, Employee.class);
+        query.setParameter("id", id);
+        Employee employee = (Employee) query.getSingleResult();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error fetching Employee with ID: " + id, e);
+        if (employee == null) {
+            throw new ResourceNotFoundException("Employee not found with ID: " + id);
         }
 
+        employee.getEmployeeProfile(); // Lazy load initialization
+        employee.getEmployeeProfile().getAddress(); // Lazy load initialization
+        employee.getAssignedProjects().size(); // Lazy load initialization
+
+        return employee;
     }
 
     public List<Employee> getEmployeeByDesignation(String designation) {
-        return employeeRepo.findByDesignation(designation);
+        String hql = "FROM Employee e WHERE e.designation = :designation";
+        Query query = entityManager.createQuery(hql, Employee.class);
+        query.setParameter("designation", designation);
+        return query.getResultList();
     }
 
     @Transactional
     public Employee assignProjectToEmployee(Integer empId, Integer projectId) {
-        try (Session session = sessionFactory.openSession()) {
-            session.beginTransaction();
+        String employeeHql = "FROM Employee e WHERE e.id = :empId";
+        Query employeeQuery = entityManager.createQuery(employeeHql, Employee.class);
+        employeeQuery.setParameter("empId", empId);
+        Employee employee = (Employee) employeeQuery.getSingleResult();
 
-            Employee employee = session.get(Employee.class, empId);
-            if (employee == null) {
-                throw new ResourceNotFoundException("Employee not found with ID: " + empId);
-            }
-
-            Project project = session.get(Project.class, projectId);
-            if (project == null) {
-                throw new ResourceNotFoundException("Project not found with ID: " + projectId);
-            }
-
-            Set<Project> projects = employee.getAssignedProjects();
-            projects.add(project);
-            employee.setAssignedProjects(projects);
-
-            session.merge(employee);
-            session.getTransaction().commit();
-            return employee;
-        } catch (Exception e) {
-            throw new RuntimeException("Error assigning project to Employee with ID: " + empId, e);
+        if (employee == null) {
+            throw new ResourceNotFoundException("Employee not found with ID: " + empId);
         }
+
+        String projectHql = "FROM Project p WHERE p.id = :projectId";
+        Query projectQuery = entityManager.createQuery(projectHql, Project.class);
+        projectQuery.setParameter("projectId", projectId);
+        Project project = (Project) projectQuery.getSingleResult();
+
+        if (project == null) {
+            throw new ResourceNotFoundException("Project not found with ID: " + projectId);
+        }
+
+        Set<Project> projects = employee.getAssignedProjects();
+        projects.add(project);
+        employee.setAssignedProjects(projects);
+
+        entityManager.merge(employee);
+        return employee;
     }
 
     @Transactional
     public Employee addEmployee(Employee e) {
-        try (Session session = sessionFactory.openSession()) {
-            session.beginTransaction();
-            session.persist(e);
-            session.getTransaction().commit();
-            return e;
-        } catch (Exception ex) {
-            throw new RuntimeException("Error adding Employee", ex);
-        }
+        entityManager.persist(e);
+        return e;
     }
 
     @Transactional
     public Employee updateEmployee(int id, Employee emp) {
-        try (Session session = sessionFactory.openSession()) {
-            session.beginTransaction();
+        String hql = "FROM Employee e WHERE e.id = :id";
+        Query query = entityManager.createQuery(hql, Employee.class);
+        query.setParameter("id", id);
+        Employee existingEmployee = (Employee) query.getSingleResult();
 
-            Employee existingEmployee = session.get(Employee.class, id);
-            if (existingEmployee == null) {
-                throw new ResourceNotFoundException("Employee not found with ID: " + id);
-            }
-
-            existingEmployee.setDesignation(emp.getDesignation());
-            existingEmployee.setSalary(emp.getSalary());
-
-            session.merge(existingEmployee);
-            session.getTransaction().commit();
-            return existingEmployee;
-        } catch (Exception ex) {
-            throw new RuntimeException("Error updating Employee with ID: " + id, ex);
+        if (existingEmployee == null) {
+            throw new ResourceNotFoundException("Employee not found with ID: " + id);
         }
+
+        existingEmployee.setDesignation(emp.getDesignation());
+        existingEmployee.setSalary(emp.getSalary());
+
+        entityManager.merge(existingEmployee);
+        return existingEmployee;
     }
 
     @Transactional
     public void deleteEmployee(int id) {
-        try (Session session = sessionFactory.openSession()) {
-            session.beginTransaction();
+        String hql = "FROM Employee e WHERE e.id = :id";
+        Query query = entityManager.createQuery(hql, Employee.class);
+        query.setParameter("id", id);
+        Employee employee = (Employee) query.getSingleResult();
 
-            Employee employee = session.get(Employee.class, id);
-            if (employee == null) {
-                throw new ResourceNotFoundException("Employee not found with ID: " + id);
-            }
-
-            session.remove(employee);
-            session.getTransaction().commit();
-        } catch (ResourceNotFoundException ex) {
-            System.err.println("Error: " + ex.getMessage());
-            throw ex;
-        } catch (Exception ex) {
-            System.err.println("An unexpected error occurred: " + ex.getMessage());
-            throw new RuntimeException("Error deleting Employee with ID: " + id, ex);
-        } finally {
-            System.out.println("Delete operation attempted for employee with ID " + id);
+        if (employee == null) {
+            throw new ResourceNotFoundException("Employee not found with ID: " + id);
         }
+
+        entityManager.remove(employee);
     }
+
 }

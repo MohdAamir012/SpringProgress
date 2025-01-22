@@ -10,9 +10,6 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import java.util.List;
 import org.hibernate.annotations.Cache;
 
-@Cacheable
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "EmployeeProfile")
 @Getter
@@ -27,7 +24,7 @@ public class EmployeeProfile {
     String email;
     String mobile;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "ProfileID", referencedColumnName = "ProfileID")
     private List<Address> address;
 

@@ -9,9 +9,6 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import java.util.HashSet;
 import java.util.Set;
 import org.hibernate.annotations.Cache;
-
-@Cacheable
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Getter
 @Setter
@@ -26,11 +23,11 @@ public class Employee {
     private String designation;
     private Double salary;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "ProfileID")
     private EmployeeProfile employeeProfile;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     private Set<Project> assignedProjects = new HashSet<>();
 
 }

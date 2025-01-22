@@ -5,17 +5,17 @@ import com.jvm.Week6.Entity.Project;
 import com.jvm.Week6.Exception.ResourceNotFoundException;
 import com.jvm.Week6.Repository.EmployeeRepo;
 import com.jvm.Week6.Repository.ProjectRepo;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.transaction.Transactional;
-import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
+import org.hibernate.query.criteria.JpaRoot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -29,107 +29,118 @@ public class EmployeeService {
     @Autowired
     private SessionFactory sessionFactory;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     public EmployeeService(EmployeeRepo employeeRepo) {
         this.employeeRepo = employeeRepo;
     }
-    public List<Employee> getAllEmployees() {
-        String hql = "FROM Employee";
-        Query query = entityManager.createQuery(hql, Employee.class);
-        return query.getResultList();
-    }
 
+//    Using criteria API to coneect with database
     @Transactional
-    public Employee getEmployeeById(Integer id) {
-        String hql = "FROM Employee e WHERE e.id = :id";
-        Query query = entityManager.createQuery(hql, Employee.class);
-        query.setParameter("id", id);
-        Employee employee = (Employee) query.getSingleResult();
-
-        if (employee == null) {
-            throw new ResourceNotFoundException("Employee not found with ID: " + id);
+    public List<Employee> getAllEmployees() {
+        try (Session session = sessionFactory.openSession()) {
+            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+            JpaCriteriaQuery<Employee> query = builder.createQuery(Employee.class);
+            JpaRoot<Employee> root = query.from(Employee.class);
+            query.select(root);
+            return session.createQuery(query).getResultList();
         }
+    }
+    @Transactional
+    public Employee getEmployeeById(int id) {
+        try (Session session = sessionFactory.openSession()) {
+            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+            JpaCriteriaQuery<Employee> query = builder.createQuery(Employee.class);
+            JpaRoot<Employee> root = query.from(Employee.class);
+            query.select(root).where(builder.equal(root.get("id"), id));
+            Employee employee = session.createQuery(query).uniqueResultOptional()
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
 
-        employee.getEmployeeProfile(); // Lazy load initialization
-        employee.getEmployeeProfile().getAddress(); // Lazy load initialization
-        employee.getAssignedProjects().size(); // Lazy load initialization
+            // Initialize assignedProjects
+            employee.getAssignedProjects().size();  // Trigger lazy loading
 
-        return employee;
+            return employee;
+        }
     }
 
+    //    Here using JPQL query to do connect with database operations
+    @Transactional
     public List<Employee> getEmployeeByDesignation(String designation) {
-        String hql = "FROM Employee e WHERE e.designation = :designation";
-        Query query = entityManager.createQuery(hql, Employee.class);
-        query.setParameter("designation", designation);
-        return query.getResultList();
+        try (Session session = sessionFactory.openSession()) {
+            String jpql = "SELECT e FROM Employee e WHERE e.designation = :designation";
+            return session.createQuery(jpql, Employee.class)
+                    .setParameter("designation", designation)
+                    .getResultList();
+        }
     }
 
+
+    //    Here using JPQL query to do connect with database operations
     @Transactional
     public Employee assignProjectToEmployee(Integer empId, Integer projectId) {
-        String employeeHql = "FROM Employee e WHERE e.id = :empId";
-        Query employeeQuery = entityManager.createQuery(employeeHql, Employee.class);
-        employeeQuery.setParameter("empId", empId);
-        Employee employee = (Employee) employeeQuery.getSingleResult();
+        try (Session session = sessionFactory.openSession()) {
+            String employeeQuery = "SELECT e FROM Employee e WHERE e.id = :empId";
+            Employee employee = session.createQuery(employeeQuery, Employee.class)
+                    .setParameter("empId", empId)
+                    .uniqueResultOptional()
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + empId));
 
-        if (employee == null) {
-            throw new ResourceNotFoundException("Employee not found with ID: " + empId);
+            String projectQuery = "SELECT p FROM Project p WHERE p.id = :projectId";
+            Project project = session.createQuery(projectQuery, Project.class)
+                    .setParameter("projectId", projectId)
+                    .uniqueResultOptional()
+                    .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
+
+            Set<Project> projects = employee.getAssignedProjects();
+            projects.add(project);
+            employee.setAssignedProjects(projects);
+
+            session.getTransaction().begin();
+            session.merge(employee);
+            session.getTransaction().commit();
+            return employee;
         }
-
-        String projectHql = "FROM Project p WHERE p.id = :projectId";
-        Query projectQuery = entityManager.createQuery(projectHql, Project.class);
-        projectQuery.setParameter("projectId", projectId);
-        Project project = (Project) projectQuery.getSingleResult();
-
-        if (project == null) {
-            throw new ResourceNotFoundException("Project not found with ID: " + projectId);
-        }
-
-        Set<Project> projects = employee.getAssignedProjects();
-        projects.add(project);
-        employee.setAssignedProjects(projects);
-
-        entityManager.merge(employee);
-        return employee;
     }
 
+//    Using criteria API to coneect with database
     @Transactional
     public Employee addEmployee(Employee e) {
-        entityManager.persist(e);
-        return e;
+        try (Session session = sessionFactory.openSession()) {
+            session.getTransaction().begin();
+            session.persist(e);
+            session.getTransaction().commit();
+            return e;
+        }
     }
 
+//    Using criteria API to coneect with database
     @Transactional
     public Employee updateEmployee(int id, Employee emp) {
-        String hql = "FROM Employee e WHERE e.id = :id";
-        Query query = entityManager.createQuery(hql, Employee.class);
-        query.setParameter("id", id);
-        Employee existingEmployee = (Employee) query.getSingleResult();
+        try (Session session = sessionFactory.openSession()) {
+            Employee existingEmployee = session.find(Employee.class, id);
+            if (existingEmployee == null) {
+                throw new ResourceNotFoundException("Employee not found with ID: " + id);
+            }
 
-        if (existingEmployee == null) {
-            throw new ResourceNotFoundException("Employee not found with ID: " + id);
+            existingEmployee.setDesignation(emp.getDesignation());
+            existingEmployee.setSalary(emp.getSalary());
+            session.getTransaction().begin();
+            session.merge(existingEmployee);
+            session.getTransaction().commit();
+            return existingEmployee;
         }
-
-        existingEmployee.setDesignation(emp.getDesignation());
-        existingEmployee.setSalary(emp.getSalary());
-
-        entityManager.merge(existingEmployee);
-        return existingEmployee;
     }
 
+    //    Using criteria API to coneect with database
     @Transactional
     public void deleteEmployee(int id) {
-        String hql = "FROM Employee e WHERE e.id = :id";
-        Query query = entityManager.createQuery(hql, Employee.class);
-        query.setParameter("id", id);
-        Employee employee = (Employee) query.getSingleResult();
+        try (Session session = sessionFactory.openSession()) {
+            Employee employee = session.find(Employee.class, id);
+            if (employee == null) {
+                throw new ResourceNotFoundException("Employee not found with ID: " + id);
+            }
 
-        if (employee == null) {
-            throw new ResourceNotFoundException("Employee not found with ID: " + id);
+            session.getTransaction().begin();
+            session.remove(employee);
+            session.getTransaction().commit();
         }
-
-        entityManager.remove(employee);
     }
-
 }

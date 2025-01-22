@@ -29,7 +29,6 @@ public class EmployeeController {
     //Get employee by ID
     @GetMapping("/{id}")
     public ResponseEntity<Employee> getEmployeeById(@PathVariable int id) {
-        // Using custom exception class to throw proper message || Best practice fo rexception handling
 
         Employee employee = employeeService.getEmployeeById(id);
         System.out.println("got the employee"+employee.getDesignation());
@@ -38,7 +37,6 @@ public class EmployeeController {
     //Get employee by Name
     @GetMapping("designation/{designation}")
     public ResponseEntity<List<Employee>> getEmployeeByDesignation(@PathVariable("designation") String designation) {
-        // Using custom exception class to throw proper message || Best practice fo rexception handling
         List<Employee> employeeList = employeeService.getEmployeeByDesignation(designation);
         return new ResponseEntity<List<Employee>>(employeeList,HttpStatus.OK);
     }

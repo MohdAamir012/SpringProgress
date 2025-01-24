@@ -9,7 +9,7 @@ version = '0.0.1-SNAPSHOT'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 
@@ -39,6 +39,8 @@ dependencies {
 	// Lombok for boilerplate code reduction
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
 	// Testing dependencies
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

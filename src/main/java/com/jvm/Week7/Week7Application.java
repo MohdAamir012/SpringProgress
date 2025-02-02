@@ -4,7 +4,7 @@ Week 7: New Java Features (Java 13 to 17)
 Objective: Learn features from Java 13 to 17.
 Focus:
 
-, and improved garbage collection.
+Java 13: Text blocks,Java 14: Switch expressions,Java 15: Sealed classes,Java 16 & 17: Records, pattern matching, and improved garbage collection.
 Project: Refactor the Spring Boot app to utilize records, text blocks, and other new features.
 */
 

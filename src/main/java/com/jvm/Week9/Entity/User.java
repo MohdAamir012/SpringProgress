@@ -6,15 +6,14 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "Employee1")
-public class Employee {
+@Table(name = "User")
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "EmpID")
     private Integer id;
     private String name;
-    private String designation;
-    private Integer yoe;
-    private Double salary;
+    private String email;
+    private Integer mobile;
+    private String address;
 }

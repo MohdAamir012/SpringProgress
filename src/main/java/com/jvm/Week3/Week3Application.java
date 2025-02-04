@@ -13,22 +13,22 @@ import org.springframework.context.annotation.Primary;
 @SpringBootApplication
 public class Week3Application {
 
-	@Bean
-	Restraunt restraunt(HotDrink hotDrink){
-		Restraunt restraunt = new Restraunt();
-		restraunt.hotDrink=hotDrink;
-		return restraunt;
-	}
-
-	@Bean
-	Tea tea(){
-		return new Tea();
-	}
-
-	@Bean
-	Coffee coffee(){
-		return new Coffee();
-	}
+//	@Bean
+//	Restraunt restraunt(HotDrink hotDrink){
+//		Restraunt restraunt = new Restraunt();
+//		restraunt.hotDrink=hotDrink;
+//		return restraunt;
+//	}
+//
+//	@Bean
+//	Tea tea(){
+//		return new Tea();
+//	}
+//
+//	@Bean
+//	Coffee coffee(){
+//		return new Coffee();
+//	}
 
 	public static void main(String[] args) {
 

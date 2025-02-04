@@ -1,80 +1,94 @@
 package com.jvm.Week9.Controller;
 
-import com.jvm.Week9.Entity.Employee;
-import com.jvm.Week9.Exception.EmployeeResponse;
-import com.jvm.Week9.Service.EmployeeService;
+import com.jvm.Week9.Entity.User;
+import com.jvm.Week9.Exception.UserResponse;
+import com.jvm.Week9.Service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/employees")
-public class EmployeeController {
+@RequestMapping("/api/users")
+public class UserController {
 
-    private final EmployeeService employeeService;
+    private final UserService userService;
 
-    public EmployeeController(EmployeeService employeeService) {
-        this.employeeService = employeeService;
+    @Autowired
+    AuthenticationManager authManager;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping()
-    public ResponseEntity<List<EmployeeService.EmployeeRecord>> getAllEmployees() {
-            List<EmployeeService.EmployeeRecord> employeeList = employeeService.getAllEmployees()
+    public ResponseEntity<List<UserService.UserRecord>> getAllUsers() {
+            List<UserService.UserRecord> UserList = userService.getAllUsers()
                     .stream()
-                    .map(emp -> new EmployeeService.EmployeeRecord(emp.getName(),emp.getDesignation(), emp.getYoe(),emp.getSalary()))
+                    .map(emp -> new UserService.UserRecord(emp.getName(),emp.getPassword(),emp.getEmail(), emp.getMobile(),emp.getAddress(), emp.getRoles()))
                     .toList();
-            return ResponseEntity.ok(employeeList);
+            return ResponseEntity.ok(UserList);
     }
 
 
     @GetMapping(value = "/{id}")
-    public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable int id) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable int id) {
         try {
-            EmployeeService.EmployeeRecord employee = employeeService.getEmployeeById(id);
-            return ResponseEntity.ok(new EmployeeResponse.Success<>( employee));
+            UserService.UserRecord user = userService.getUserById(id);
+            return ResponseEntity.ok(new UserResponse.Success<>(user));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new EmployeeResponse.Error("Employee not found", 404));
+                    .body(new UserResponse.Error("User not found", 404));
         }
     }
 
-    @PostMapping
-    public ResponseEntity<EmployeeResponse> addEmployee(@RequestBody EmployeeService.EmployeeRecord record) {
-            var employee = new Employee();
-            employee.setName(record.name());
-            employee.setDesignation(record.designation());
-            employee.setYoe(record.yoe());
-            employee.setSalary(record.salary());
-            EmployeeService.EmployeeRecord savedEmployee = employeeService.addEmployee(employee);
+    @PostMapping("/register")
+    public ResponseEntity<UserResponse> addUser(@RequestBody UserService.UserRecord record) {
+            var user = new User();
+            user.setName(record.name());
+            user.setPassword(record.password());
+        user.setEmail(record.email());
+        user.setMobile(record.mobile());
+        user.setAddress(record.address());
+        user.setRoles(record.roles());
+            UserService.UserRecord savedUser = userService.addUser(user);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new EmployeeResponse.Success<>( savedEmployee));
+                    .body(new UserResponse.Success<>( savedUser));
+    }
+
+    @PostMapping("/login")
+    public String login (@RequestBody UserService.UserRecord record){
+
+        return userService.verify(record);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EmployeeResponse> updateEmployee(@PathVariable Integer id, @RequestBody EmployeeService.EmployeeRecord record) {
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Integer id, @RequestBody UserService.UserRecord record) {
         try {
-            var employee = new Employee();
-            employee.setDesignation(record.designation());
-            employee.setSalary(record.salary());
-            EmployeeService.EmployeeRecord updatedEmployee = employeeService.updateEmployee(id, employee);
-            return ResponseEntity.ok(new EmployeeResponse.Success<>(updatedEmployee));
+            var user = new User();
+            user.setName(record.name());
+            user.setEmail(record.email());
+            user.setMobile(record.mobile());
+            user.setAddress(record.address());
+            UserService.UserRecord updatedUser = userService.updateUser(id, user);
+            return ResponseEntity.ok(new UserResponse.Success<>(updatedUser));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new EmployeeResponse.Error("Failed to update employee", 404));
+                    .body(new UserResponse.Error("Failed to update User", 404));
         }
     }
 
-
     @DeleteMapping("/{id}")
-    public ResponseEntity<EmployeeResponse> deleteEmployee(@PathVariable int id) {
+    public ResponseEntity<UserResponse> deleteUser(@PathVariable int id) {
         try {
-            employeeService.deleteEmployee(id);
-            return ResponseEntity.ok(new EmployeeResponse.Success<>(null));
+            userService.deleteUser(id);
+            return ResponseEntity.ok(new UserResponse.Success<>(null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new EmployeeResponse.Error("Failed to delete employee", 404));
+                    .body(new UserResponse.Error("Failed to delete User", 404));
         }
     }
 }

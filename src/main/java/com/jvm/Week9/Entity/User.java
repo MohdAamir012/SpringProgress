@@ -8,12 +8,13 @@ import lombok.Setter;
 @Entity
 @Table(name = "User")
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
     private String name;
+    private String password;
     private String email;
-    private Integer mobile;
+    private String mobile;
     private String address;
+    private String roles;
 }
